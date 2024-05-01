@@ -43,9 +43,11 @@ class NewsAdapter : RecyclerView.Adapter<NewsAdapter.ArticleViewHolder>() {
     override fun onBindViewHolder(holder: ArticleViewHolder, position: Int) {
         val article = differ.currentList[position]
         holder.apply {
+            // Using a placeholder image
             Glide.with(itemView)
                 .load(article.urlToImage)
                 .into(articleImage)
+
             articleSource.text = article.source.name
             articleTitle.text = article.title
             articleDescriptor.text = article.description
@@ -56,6 +58,8 @@ class NewsAdapter : RecyclerView.Adapter<NewsAdapter.ArticleViewHolder>() {
             }
         }
     }
+
+
     private var onItemClickListener: ((Article) -> Unit)? = null
     fun setOnItemClickListener(listener: (Article) -> Unit) {
         onItemClickListener = listener

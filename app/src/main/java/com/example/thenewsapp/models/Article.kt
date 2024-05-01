@@ -16,8 +16,8 @@ data class Article(
     val publishedAt: String = "",
     val source: Source = Source("",""),
     val title: String = "",
-    val url: String? = null,
-    val urlToImage: String? = null // Изменение типа на String? (может быть null)
+    val url: String? = "",
+    val urlToImage: String? = "" // Изменение типа на String? (может быть null)
 ) : Serializable {
     override fun hashCode(): Int {
         var result = id.hashCode()
@@ -29,13 +29,10 @@ data class Article(
         }
         return result
     }
-
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
-
         other as Article
-
         if (id != other.id) return false
         if (author != other.author) return false
         if (content != other.content) return false
