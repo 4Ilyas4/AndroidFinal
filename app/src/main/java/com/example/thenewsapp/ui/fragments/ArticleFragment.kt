@@ -5,7 +5,6 @@ import androidx.fragment.app.Fragment
 import android.view.View
 import android.webkit.WebViewClient
 import androidx.navigation.fragment.navArgs
-import com.example.thenewsapp.R
 import com.example.thenewsapp.databinding.FragmentArticleBinding
 import com.example.thenewsapp.ui.NewsActivity
 import com.example.thenewsapp.ui.NewsViewModel

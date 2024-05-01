@@ -17,14 +17,14 @@ data class Article(
     val source: Source = Source("",""),
     val title: String = "",
     val url: String? = "",
-    val urlToImage: String? = "" // Изменение типа на String? (может быть null)
+    val urlToImage: String? = ""
 ) : Serializable {
     override fun hashCode(): Int {
         var result = id.hashCode()
-        if (url != null && url.isNotEmpty()) {
+        if (!url.isNullOrEmpty()) {
             result = 31 * result + url.hashCode()
         }
-        if (urlToImage != null && urlToImage.isNotEmpty()) {
+        if (!urlToImage.isNullOrEmpty()) {
             result = 31 * result + urlToImage.hashCode()
         }
         return result
@@ -41,7 +41,6 @@ data class Article(
         if (source != other.source) return false
         if (title != other.title) return false
         if (url != other.url) return false
-        if (urlToImage != other.urlToImage) return false
-        return true
+        return urlToImage == other.urlToImage
     }
 }

@@ -1,13 +1,11 @@
 package com.example.thenewsapp.ui
 
-//import androidx.navigation.findNavController
+
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
-import com.bumptech.glide.annotation.GlideModule
-import com.bumptech.glide.module.AppGlideModule
 import com.example.thenewsapp.R
 import com.example.thenewsapp.databinding.ActivityNewsBinding
 import com.example.thenewsapp.db.ArticleDatabase

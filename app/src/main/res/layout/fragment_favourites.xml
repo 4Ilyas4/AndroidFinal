@@ -11,7 +11,7 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="12dp"
         android:fontFamily="sans-serif-light"
-        android:text="Favourites."
+        android:text="@string/favourites1"
         android:textColor="@color/purple"
         android:textSize="30sp"
         android:textStyle="bold"
