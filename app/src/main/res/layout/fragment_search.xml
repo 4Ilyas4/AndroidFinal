@@ -1,128 +1,80 @@
-package com.example.thenewsapp.ui.fragments
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
-import android.content.Context
-import android.os.Bundle
-//import android.text.Editable
-//import android.text.TextWatcher
-import androidx.fragment.app.Fragment
-import android.view.LayoutInflater
-import android.view.View
-import android.widget.AbsListView
-import android.widget.Button
-import android.widget.TextView
-import android.widget.Toast
-import androidx.cardview.widget.CardView
-import androidx.core.widget.addTextChangedListener
-import androidx.lifecycle.Observer
-import androidx.navigation.fragment.findNavController
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.example.thenewsapp.R
-import com.example.thenewsapp.adapters.NewsAdapter
-import com.example.thenewsapp.databinding.FragmentSearchBinding
-import com.example.thenewsapp.ui.NewsActivity
-import com.example.thenewsapp.ui.NewsViewModel
-import com.example.thenewsapp.util.Constants
-import com.example.thenewsapp.util.Constants.Companion.SEARCH_NEWS_TIME_DELAY
-import com.example.thenewsapp.util.Resource
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/search1"
+        android:textSize="30sp"
+        android:fontFamily="sans-serif-light"
+        android:textColor="@color/purple"
+        android:textStyle="bold"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="12dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"/>
 
-class SearchFragment : Fragment(R.layout.fragment_search) {
-    private lateinit var newsViewModel: NewsViewModel
-    private lateinit var newsAdapter: NewsAdapter
-    private lateinit var retryButton: Button
-    private lateinit var errorText: TextView
-    private lateinit var itemSearchError: View
-    private lateinit var binding: FragmentSearchBinding
+    <EditText
+        android:id="@+id/searchEdit"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:hint="@string/search_news1"
+        android:layout_marginTop="70dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:padding="8dp"
+        android:textSize="14sp"
+        android:fontFamily="sans-serif-light"
+        android:drawableTint="@color/purple"
+        android:background="@drawable/search_border"
+        android:drawableEnd="@drawable/baseline_search_24"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:autofillHints="" />
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        binding = FragmentSearchBinding.bind(view)
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerSearch"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:paddingBottom="50dp"
+        android:clipToPadding="false"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginTop="12dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/searchEdit"
+        tools:layout_editor_absoluteX="0dp" />
 
-        // Инициализация компонентов
-        itemSearchError = binding.itemSearchError.root
-        retryButton = itemSearchError.findViewById(R.id.retryButton)
-        errorText = itemSearchError.findViewById(R.id.errorText)
+    <include
+        android:id="@+id/itemSearchError"
+        layout="@layout/item_error"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-        newsViewModel = (activity as NewsActivity).newsViewModel
-        setupSearchRecycler()
+    <ProgressBar
+        android:id="@+id/paginationProgressBar"
+        style="?attr/progressBarStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="invisible"
+        android:background="@android:color/transparent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent" />
 
-        newsAdapter.setOnItemClickListener {
-            val bundle = Bundle().apply {
-                putSerializable("article", it)
-            }
-            findNavController().navigate(R.id.action_searchFragment_to_articleFragment, bundle)
-        }
-
-        var job: Job? = null
-        binding.searchEdit.addTextChangedListener { editable ->
-            job?.cancel()
-            job = MainScope().launch {
-                delay(SEARCH_NEWS_TIME_DELAY)
-                editable?.let {
-                    if (editable.toString().isNotEmpty()) {
-                        newsViewModel.searchNews(editable.toString())
-                    }
-                }
-            }
-        }
-
-        newsViewModel.searchNews.observe(viewLifecycleOwner, Observer { response ->
-            when (response) {
-                is Resource.Success -> {
-                    hideProgressBar()    
-                    hideErrorMessage()
-                    response.data?.let { newsResponse ->
-                        newsAdapter.submitList(newsResponse.articles.toList())
-                    }
-                }
-                is Resource.Error -> {
-                    hideProgressBar()
-                    response.message?.let { message ->
-                        Toast.makeText(activity, "Error: $message", Toast.LENGTH_LONG).show()
-                        showErrorMessage(message)
-                    }
-                }
-                is Resource.Loading -> {
-                    showProgressBar()
-                }
-            }
-        })
-
-        retryButton.setOnClickListener {
-            if (binding.searchEdit.text.toString().isNotEmpty()) {
-                newsViewModel.searchNews(binding.searchEdit.text.toString())
-            } else {
-                hideErrorMessage()
-            }
-        }
-    }
-
-    private fun hideProgressBar() {
-        binding.paginationProgressBar.visibility = View.INVISIBLE
-    }
-
-    private fun showProgressBar() {
-        binding.paginationProgressBar.visibility = View.VISIBLE
-    }
-
-    private fun hideErrorMessage() {
-        itemSearchError.visibility = View.INVISIBLE
-    }
-
-    private fun showErrorMessage(message: String) {
-        itemSearchError.visibility = View.VISIBLE
-        errorText.text = message
-    }
-
-    private fun setupSearchRecycler() {
-        newsAdapter = NewsAdapter()
-        binding.recyclerSearch.apply {
-            adapter = newsAdapter
-            layoutManager = LinearLayoutManager(activity)
-        }
-    }
-}
+</androidx.constraintlayout.widget.ConstraintLayout>
