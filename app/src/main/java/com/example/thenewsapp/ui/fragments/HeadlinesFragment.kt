@@ -6,7 +6,10 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.AbsListView
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import android.widget.Button
+import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.cardview.widget.CardView
@@ -26,18 +29,40 @@ class HeadlinesFragment : Fragment(R.layout.fragment_headlines) {
     lateinit var newsViewModel: NewsViewModel
     private lateinit var newsAdapter: NewsAdapter
     private lateinit var retryButton: Button
+    private lateinit var refreshButton: Button
     private lateinit var errorText: TextView
     private lateinit var itemHeadlinesError: CardView
     private lateinit var binding: FragmentHeadlinesBinding
+    private lateinit var country: String
+    private lateinit var spinner: Spinner
+    private lateinit var spinnerCat: Spinner
+    private lateinit var arrayAdapter: ArrayAdapter<String>
+    private lateinit var arrayAdapterCat: ArrayAdapter<String>
+    private lateinit var countries: Array<String>
+    private lateinit var category: String
+    private lateinit var categories: Array<String>
+    private var catflag: Boolean = false
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding = FragmentHeadlinesBinding.bind(view)
-        itemHeadlinesError = view.findViewById(R.id.itemHeadlinesError)
+        newsViewModel = (activity as NewsActivity).newsViewModel
+        refreshButton = view.findViewById(R.id.buttonF)
+        spinner = view.findViewById(R.id.spinner_countries)
+        spinnerCat = view.findViewById(R.id.spinner_category)
+        countries = newsViewModel.getCountries()
+        categories = newsViewModel.getCategories()
+        arrayAdapter = ArrayAdapter(requireContext(),android.R.layout.simple_spinner_item, newsViewModel.getCountries().toList())
+            itemHeadlinesError = view.findViewById(R.id.itemHeadlinesError)
+        arrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinner.adapter = arrayAdapter
+        arrayAdapterCat = ArrayAdapter(requireContext(),android.R.layout.simple_spinner_item, newsViewModel.getCategories().toList())
+        arrayAdapterCat.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerCat.adapter = arrayAdapterCat
         val inflater = requireContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
         val inflatedView: View = inflater.inflate(R.layout.item_error, null)
         retryButton = inflatedView.findViewById(R.id.retryButton)
         errorText = inflatedView.findViewById(R.id.errorText)
-        newsViewModel = (activity as NewsActivity).newsViewModel
+
         setupHeadlinesRecycler()
         newsAdapter.setOnItemClickListener {
             val bundle = Bundle().apply {
@@ -47,6 +72,26 @@ class HeadlinesFragment : Fragment(R.layout.fragment_headlines) {
                 R.id.action_headlinesFragment_to_articleFragment,
                 bundle
             )
+        }
+        category = newsViewModel.getCategory()
+        country = newsViewModel.getCountry()
+        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>, view: android.view.View?, position: Int, id: Long) {
+                country = countries[position]
+                catflag = false
+            }
+            override fun onNothingSelected(parent: AdapterView<*>) {
+                // Действия, если ничего не выбрано
+            }
+        }
+        spinnerCat.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>, view: android.view.View?, position: Int, id: Long) {
+                category = categories[position]
+                catflag = true
+            }
+            override fun onNothingSelected(parent: AdapterView<*>) {
+                // Действия, если ничего не выбрано
+            }
         }
         newsViewModel.headlines.observe(viewLifecycleOwner , Observer{ response ->
             when (response) {
@@ -74,14 +119,23 @@ class HeadlinesFragment : Fragment(R.layout.fragment_headlines) {
                 }
             }
         })
+        refreshButton.setOnClickListener {
+            if(catflag){
+                newsViewModel.setCategory(category)
+            }
+            else {
+                newsViewModel.setCountry(country)
+            }
+        }
         retryButton.setOnClickListener {
-            newsViewModel.getHeadlines("us")
+            newsViewModel.getHeadlines(country)
         }
     }
     var isError = false
     var isLoading = false
     var isLastPage = false
     var isScrolling = false
+
     private fun hideProgressBar() {
         binding.paginationProgressBar.visibility = View.INVISIBLE
         isLoading = false
@@ -99,6 +153,7 @@ class HeadlinesFragment : Fragment(R.layout.fragment_headlines) {
         errorText.text = message
         isError = true
     }
+
     private val scrollListener = object : RecyclerView.OnScrollListener() {
         override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
             super.onScrolled(recyclerView, dx, dy)
@@ -115,7 +170,7 @@ class HeadlinesFragment : Fragment(R.layout.fragment_headlines) {
                 isNoErrors && isNotLoadingAndNotLastPage && isAtLastItem && isNotAtBeginning &&
                         isTotalMoreThanVisible && isScrolling
             if (shouldPaginate) {
-                newsViewModel.getHeadlines("us")
+                newsViewModel.getHeadlines(country)//
                 isScrolling = false
             }
         }
