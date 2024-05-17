@@ -23,7 +23,7 @@
             android:layout_height="match_parent"
             app:defaultNavHost="true"
             app:navGraph="@navigation/news_nav_graph"
-            />
+            tools:layout="@layout/fragment_article" />
     </FrameLayout>
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigationView"

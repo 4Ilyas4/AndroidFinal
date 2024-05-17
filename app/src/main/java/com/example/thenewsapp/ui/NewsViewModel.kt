@@ -23,12 +23,14 @@ class NewsViewModel(
     var headlinesPage = 1
     private var headLinesResponse: NewsResponse? = null
     val searchNews: MutableLiveData<Resource<NewsResponse>> = MutableLiveData()
-    var searchNewsPage = 1
+    private var searchNewsPage = 1
     private var searchNewsResponse: NewsResponse? = null
     private var newSearchQuery:String? = null
     private var oldSearchQuery:String? = null
+    private var countryCode: String = "us"
+    private var categ: String = "business"
     init {
-        getHeadlines("us")
+        getHeadlines(countryCode)
     }
     fun getHeadlines(countryCode: String) = viewModelScope.launch {
         headlinesInternet(countryCode)
@@ -37,18 +39,45 @@ class NewsViewModel(
         searchNewsCall(searchQuery)
     }
 
+    fun setCountry(countryCode: String) {
+        this.countryCode = countryCode
+        getHeadlines(countryCode)
+    }
+    fun getCountry(): String{
+        return this.countryCode
+    }
+
+    fun setCategory(category: String) {
+        this.categ = category
+        categorySearch(category)
+    }
+
+    fun getCategories(): Array<String> {
+        return arrayOf("business","entertainment","general","health","science","sports","technology")
+    }
+    fun getCategory(): String {
+        return this.categ
+    }
+    private fun categorySearch(category: String) = viewModelScope.launch {
+        headlinesCategoryInternet(category)
+    }
+
     private fun handleHeadLinesResponse(response: Response<NewsResponse>): Resource<NewsResponse> {
         if (response.isSuccessful) {
             response.body()?.let { resultResponse ->
-                headlinesPage++
-                if (headLinesResponse == null) {
-                    headLinesResponse = resultResponse
-                } else {
-                    val oldArticles = headLinesResponse?.articles ?: mutableListOf()
-                    val newArticles = resultResponse.articles
-                    oldArticles.addAll(newArticles)
-                    headLinesResponse?.articles = oldArticles
-                }
+                val filteredArticles = resultResponse.articles.filter { it.url != "https://removed.com" }
+                resultResponse.articles = filteredArticles.toMutableList()
+
+                headLinesResponse = resultResponse
+                //headlinesPage++
+                //if (headLinesResponse == null) {
+                //    headLinesResponse = resultResponse
+                //} else {
+                //    val oldArticles = headLinesResponse?.articles ?: mutableListOf()
+                //    val newArticles = resultResponse.articles
+                //    oldArticles.addAll(newArticles)
+                //    headLinesResponse?.articles = oldArticles
+                //}
                 return Resource.Success(headLinesResponse ?: resultResponse)
             }
         }
@@ -57,17 +86,28 @@ class NewsViewModel(
     private fun handleSearchNewsResponse(response: Response<NewsResponse>): Resource<NewsResponse> {
         if (response.isSuccessful) {
             response.body()?.let { resultResponse ->
-                if (searchNewsResponse == null || newSearchQuery != oldSearchQuery) {
+                val filteredArticles = resultResponse.articles.filter { it.url != "https://removed.com" }
+                resultResponse.articles = filteredArticles.toMutableList()
+
+                searchNewsResponse = if (searchNewsResponse == null || newSearchQuery != oldSearchQuery) {
                     searchNewsPage = 1
                     oldSearchQuery = newSearchQuery
-                    searchNewsResponse = resultResponse
+                    resultResponse
                 } else {
                     searchNewsPage++
-                    val oldArticles = searchNewsResponse?.articles ?: mutableListOf()
-                    val newArticles = resultResponse.articles
-                    oldArticles.addAll(newArticles)
-                    searchNewsResponse?.articles = oldArticles
+                    resultResponse
                 }
+                //if (searchNewsResponse == null || newSearchQuery != oldSearchQuery) {
+                //    searchNewsPage = 1
+                //    oldSearchQuery = newSearchQuery
+                //    searchNewsResponse = resultResponse
+                //} else {
+                //    searchNewsPage++
+                //    val oldArticles = searchNewsResponse?.articles ?: mutableListOf()
+                //    val newArticles = resultResponse.articles
+                //    oldArticles.addAll(newArticles)
+                //    searchNewsResponse?.articles = oldArticles
+                //}
                 return Resource.Success(searchNewsResponse ?: resultResponse)
             }
         }
@@ -124,5 +164,25 @@ class NewsViewModel(
                 else -> headlines.postValue(Resource.Error("Conversion Error"))
             }
         }
+    }
+    private suspend fun headlinesCategoryInternet(category: String) {
+        headlines.postValue(Resource.Loading())
+        try {
+            if(internetConnection(this.getApplication())) {
+                val response = newsRepository.getHeadlinesByCategory(category)
+                headlines.postValue(handleHeadLinesResponse(response))
+            } else {
+                headlines.postValue(Resource.Error("No internet connection"))
+            }
+        } catch(t: Throwable) {
+            when(t) {
+                is IOException -> headlines.postValue(Resource.Error("Network Failure"))
+                else -> headlines.postValue(Resource.Error("Conversion ErrorAA"))
+            }
+        }
+    }
+
+    fun getCountries(): Array<String> {
+        return arrayOf("us", "ru", "kz","ae","ar","au","be","bg","br","ca","ch","cn","co")
     }
 }
