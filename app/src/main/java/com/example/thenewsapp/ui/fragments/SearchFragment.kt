@@ -31,24 +31,21 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class SearchFragment : Fragment(R.layout.fragment_search) {
-    lateinit var newsViewModel: NewsViewModel
+    private lateinit var newsViewModel: NewsViewModel
     private lateinit var newsAdapter: NewsAdapter
     private lateinit var retryButton: Button
     private lateinit var errorText: TextView
-    private lateinit var itemSearchError: CardView
-    lateinit var binding: FragmentSearchBinding
+    private lateinit var itemSearchError: View
+    private lateinit var binding: FragmentSearchBinding
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding = FragmentSearchBinding.bind(view)
 
-        itemSearchError = view.findViewById(R.id.itemSearchError)
-
-        val inflater = requireContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-        val inflatedView: View = inflater.inflate(R.layout.item_error, null)
-
-        retryButton = inflatedView.findViewById(R.id.retryButton)
-        errorText = inflatedView.findViewById(R.id.errorText)
+        // Инициализация компонентов
+        itemSearchError = binding.itemSearchError.root
+        retryButton = itemSearchError.findViewById(R.id.retryButton)
+        errorText = itemSearchError.findViewById(R.id.errorText)
 
         newsViewModel = (activity as NewsActivity).newsViewModel
         setupSearchRecycler()
@@ -73,37 +70,30 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
             }
         }
 
-        newsViewModel.searchNews.observe(viewLifecycleOwner, Observer{ response ->
+        newsViewModel.searchNews.observe(viewLifecycleOwner, Observer { response ->
             when (response) {
-                is Resource.Success<*> -> {
+                is Resource.Success -> {
                     hideProgressBar()
                     hideErrorMessage()
                     response.data?.let { newsResponse ->
                         newsAdapter.submitList(newsResponse.articles.toList())
-                        val totalPages = newsResponse.totalResults / Constants.QUERY_PAGE_SIZE + 2
-                        isLastPage = newsViewModel.searchNewsPage == totalPages
-                        if (isLastPage) {
-                            binding.recyclerSearch.setPadding(0, 0, 0, 0)
-                        }
                     }
                 }
-
-                is Resource.Error<*> -> {
+                is Resource.Error -> {
                     hideProgressBar()
                     response.message?.let { message ->
-                        Toast.makeText(activity, "Sorry error:$message", Toast.LENGTH_LONG).show()
+                        Toast.makeText(activity, "Error: $message", Toast.LENGTH_LONG).show()
                         showErrorMessage(message)
                     }
                 }
-
-                is Resource.Loading<*> -> {
+                is Resource.Loading -> {
                     showProgressBar()
                 }
             }
         })
 
         retryButton.setOnClickListener {
-            if (binding.searchEdit.text.toString().isNotEmpty()){
+            if (binding.searchEdit.text.toString().isNotEmpty()) {
                 newsViewModel.searchNews(binding.searchEdit.text.toString())
             } else {
                 hideErrorMessage()
@@ -111,69 +101,28 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
         }
     }
 
-    var isError = false
-    var isLoading = false
-    var isLastPage = false
-    var isScrolling = false
-
     private fun hideProgressBar() {
         binding.paginationProgressBar.visibility = View.INVISIBLE
-        isLoading = false
     }
 
     private fun showProgressBar() {
         binding.paginationProgressBar.visibility = View.VISIBLE
-        isLoading = true
     }
 
     private fun hideErrorMessage() {
         itemSearchError.visibility = View.INVISIBLE
-        isError = false
     }
 
     private fun showErrorMessage(message: String) {
         itemSearchError.visibility = View.VISIBLE
         errorText.text = message
-        isError = true
     }
 
-    private val scrollListener = object : RecyclerView.OnScrollListener() {
-        override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-            super.onScrolled(recyclerView, dx, dy)
-
-            val layoutManager = recyclerView.layoutManager as LinearLayoutManager
-            val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
-            val visibleItemCount = layoutManager.childCount
-            val totalItemCount = layoutManager.itemCount
-
-            val isNoErrors = !isError
-            val isNotLoadingAndNotLastPage = !isLoading && !isLastPage
-            val isAtLastItem = firstVisibleItemPosition + visibleItemCount >= totalItemCount
-            val isNotAtBeginning = firstVisibleItemPosition >= 0
-            val isTotalMoreThanVisible = totalItemCount >= Constants.QUERY_PAGE_SIZE
-            val shouldPaginate =
-                isNoErrors && isNotLoadingAndNotLastPage && isAtLastItem && isNotAtBeginning &&
-                        isTotalMoreThanVisible && isScrolling
-            if (shouldPaginate) {
-                newsViewModel.searchNews(binding.searchEdit.text.toString())
-                isScrolling = false
-            }
-        }
-
-        override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-            super.onScrollStateChanged(recyclerView, newState)
-            if (newState == AbsListView.OnScrollListener.SCROLL_STATE_TOUCH_SCROLL) {
-                isScrolling = true
-            }
-        }
-    }
-    private fun setupSearchRecycler(){
+    private fun setupSearchRecycler() {
         newsAdapter = NewsAdapter()
         binding.recyclerSearch.apply {
             adapter = newsAdapter
             layoutManager = LinearLayoutManager(activity)
-            addOnScrollListener(this@SearchFragment.scrollListener)
-
         }
     }
 }
