@@ -14,4 +14,5 @@
     <string name="retry">Retry</string>
     <string name="source">SOURCE</string>
     <string name="title">TITLE</string>
+    <string name="refresh">Refresh</string>
 </resources>
