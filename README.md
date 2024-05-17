@@ -35,3 +35,15 @@ Welcome to the Simple News App! This application provides users with a seamless 
 
 https://github.com/4Ilyas4/AndroidFinal/assets/89043156/c296441b-2946-4593-b534-336aa2937d75
 
+
+5. **Contact**
+   - For any questions or suggestions, feel free to open an issue or contact the project maintainer:
+
+   1.Name: Mansurov Ilyas, GitHub: 4Ilyas4
+   2.Name: Omirzhanov Yerassyl, GitHub: Pingwinnel
+   3.Name: Mazghanuly Bekarys, GitHub: BekAncer
+   
+
+
+
+   Thank you for using the Simple News App! We hope it keeps you informed and engaged.
